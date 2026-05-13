@@ -66,6 +66,22 @@ CREATE TABLE IF NOT EXISTS announcements (
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- Learning References Table (free learning resources per domain)
+CREATE TABLE IF NOT EXISTS learning_references (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    domain_id INT NOT NULL,
+    phase VARCHAR(50),
+    title VARCHAR(300) NOT NULL,
+    url VARCHAR(500) NOT NULL,
+    description TEXT,
+    type ENUM('article', 'video', 'course', 'tool', 'documentation', 'other') DEFAULT 'article',
+    source VARCHAR(200),
+    created_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (domain_id) REFERENCES domains(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
 -- ========== SEED DATA ==========
 
 -- Default Domains (with keywords for AI recommendation)

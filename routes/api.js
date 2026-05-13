@@ -731,4 +731,107 @@ router.get('/analytics', verifyToken, requireRole('admin'), async (req, res) => 
     }
 });
 
+// ======================== REFERENCES (Learning Resources) ========================
+
+// GET /api/domains/:id/references — Fetch references for a domain (optionally filter by phase/type)
+router.get('/domains/:id/references', verifyToken, async (req, res) => {
+    try {
+        let query = `SELECT lr.*, u.name as author_name 
+                     FROM learning_references lr 
+                     LEFT JOIN users u ON lr.created_by = u.id 
+                     WHERE lr.domain_id = ?`;
+        const params = [req.params.id];
+
+        if (req.query.phase) {
+            query += ' AND lr.phase = ?';
+            params.push(req.query.phase);
+        }
+        if (req.query.type) {
+            query += ' AND lr.type = ?';
+            params.push(req.query.type);
+        }
+
+        query += ' ORDER BY lr.phase ASC, lr.created_at ASC';
+        const [refs] = await db.query(query, params);
+        res.json(refs);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// POST /api/domains/:id/references — Add a new reference (mentor/admin)
+router.post('/domains/:id/references', verifyToken, requireRole('mentor', 'admin'), async (req, res) => {
+    try {
+        const { phase, title, url, description, type, source } = req.body;
+        if (!title || !url) return res.status(400).json({ error: 'Title and URL are required' });
+
+        const refType = type || 'article';
+        const [result] = await db.query(
+            'INSERT INTO learning_references (domain_id, phase, title, url, description, type, source, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [req.params.id, phase || null, title, url, description || '', refType, source || '', req.user.id]
+        );
+
+        res.status(201).json({ message: 'Reference added', id: result.insertId });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// PUT /api/references/:id — Edit a reference (mentor: own only, admin: any)
+router.put('/references/:id', verifyToken, requireRole('mentor', 'admin'), async (req, res) => {
+    try {
+        const { phase, title, url, description, type, source } = req.body;
+        if (!title || !url) return res.status(400).json({ error: 'Title and URL are required' });
+
+        // Mentors can only edit their own references
+        if (req.user.role === 'mentor') {
+            const [existing] = await db.query('SELECT * FROM learning_references WHERE id = ? AND created_by = ?', [req.params.id, req.user.id]);
+            if (existing.length === 0) return res.status(403).json({ error: 'You can only edit your own references' });
+        }
+
+        await db.query(
+            'UPDATE learning_references SET phase = ?, title = ?, url = ?, description = ?, type = ?, source = ? WHERE id = ?',
+            [phase || null, title, url, description || '', type || 'article', source || '', req.params.id]
+        );
+
+        res.json({ message: 'Reference updated' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// DELETE /api/references/:id — Delete a reference (mentor: own only, admin: any)
+router.delete('/references/:id', verifyToken, requireRole('mentor', 'admin'), async (req, res) => {
+    try {
+        if (req.user.role === 'mentor') {
+            const [existing] = await db.query('SELECT * FROM learning_references WHERE id = ? AND created_by = ?', [req.params.id, req.user.id]);
+            if (existing.length === 0) return res.status(403).json({ error: 'You can only delete your own references' });
+            await db.query('DELETE FROM learning_references WHERE id = ? AND created_by = ?', [req.params.id, req.user.id]);
+        } else {
+            await db.query('DELETE FROM learning_references WHERE id = ?', [req.params.id]);
+        }
+
+        res.json({ message: 'Reference deleted' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// POST /api/domains/:id/references/generate — Auto-generate references for missing phases
+router.get('/domains/:id/references/count', verifyToken, async (req, res) => {
+    try {
+        const [[{ count }]] = await db.query(
+            'SELECT COUNT(*) as count FROM learning_references WHERE domain_id = ?',
+            [req.params.id]
+        );
+        res.json({ count });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;
