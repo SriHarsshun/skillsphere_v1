@@ -716,7 +716,7 @@ router.get('/students', verifyToken, requireRole('mentor', 'admin'), async (req,
 
 // ======================== ANALYTICS (admin) ========================
 
-router.get('/analytics', verifyToken, requireRole('admin'), async (req, res) => {
+router.get('/analytics', verifyToken, requireRole('admin', 'mentor'), async (req, res) => {
     try {
         const [[{ totalUsers }]] = await db.query('SELECT COUNT(*) as totalUsers FROM users');
         const [[{ totalStudents }]] = await db.query('SELECT COUNT(*) as totalStudents FROM users WHERE role="student"');

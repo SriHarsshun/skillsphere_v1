@@ -12,6 +12,54 @@
     const API = '/api';
     const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 
+    // ===== Particle Canvas Animation =====
+    (function initParticles() {
+        const canvas = document.getElementById('particleCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const count = 35;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() { this.init(); }
+            init() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.4;
+                this.vy = (Math.random() - 0.5) * 0.4;
+                this.size = Math.random() * 2 + 1;
+                this.alpha = Math.random() * 0.5 + 0.2;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.init();
+            }
+            draw() {
+                ctx.fillStyle = `rgba(34, 211, 238, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < count; i++) particles.push(new Particle());
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    })();
+
     // ===== DOM =====
     const sidebar = document.getElementById('sidebar');
     const sidebarNav = document.getElementById('sidebarNav');
@@ -160,11 +208,17 @@
     }
 
     function showToast(msg, type = 'success') {
+        const icons = { 
+            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>', 
+            error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>', 
+            info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="16" height="16"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>' 
+        };
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        toast.textContent = msg;
-        document.body.appendChild(toast);
-        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+        toast.innerHTML = `<span style="display:inline-flex;align-items:center;justify-content:center;margin-right:8px;">${icons[type] || icons.success}</span> ${msg}`;
+        const container = document.getElementById('toastContainer') || document.body;
+        container.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(30px)'; setTimeout(() => toast.remove(), 300); }, 3500);
     }
 
     function formatDate(d) {
@@ -183,17 +237,23 @@
 
     // ===== DOMAIN ICONS =====
     const domainIcons = {
-        'web development': '🌐', 'artificial intelligence': '🤖', 'cloud computing': '☁️',
-        'devops': '⚙️', 'cybersecurity': '🔒', 'mobile development': '📱',
-        'data science': '📊', 'blockchain': '🔗', 'game development': '🎮',
+        'web development': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+        'artificial intelligence': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7v4a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-1H4a1 1 0 0 1-1-1v-4a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><path d="M9 13v2"/><path d="M15 13v2"/></svg>',
+        'cloud computing': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>',
+        'devops': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+        'cybersecurity': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+        'mobile development': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',
+        'data science': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+        'blockchain': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+        'game development': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4"/><path d="M8 10v4"/><path d="M15 11h.01"/><path d="M18 13h.01"/></svg>',
     };
-    function getDomainIcon(name) { return domainIcons[(name || '').toLowerCase()] || '💡'; }
-    const domainColors = ['#6c5ce7', '#00b894', '#e17055', '#0984e3', '#fdcb6e', '#fd79a8', '#00cec9', '#fab1a0'];
+    function getDomainIcon(name) { return domainIcons[(name || '').toLowerCase()] || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>'; }
+    const domainColors = ['#00e6cc', '#22d3ee', '#4ade80', '#facc15', '#3b82f6', '#2dd4bf', '#0ea5e9', '#fb923c'];
     function getDomainColor(i) { return domainColors[i % domainColors.length]; }
 
     // ===== VIEW: HOME =====
     async function loadHome() {
-        if (user.role === 'admin') return loadAdminHome();
+        if (user.role === 'admin' || user.role === 'mentor') return loadAdminHome();
 
         const [tasks, announcements, profile] = await Promise.all([
             apiFetch('/tasks'),
@@ -214,7 +274,7 @@
             <div class="stats-grid">
                 ${user.role === 'student' ? `
                 <div class="stat-card">
-                    <div class="stat-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+                    <div class="stat-icon cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
                     <div class="stat-info"><span class="stat-number">${profile.credits || 0}</span><span class="stat-label">Total Credits</span></div>
                 </div>` : ''}
                 <div class="stat-card">
@@ -233,20 +293,20 @@
 
             ${user.role === 'student' ? `
             <div class="section">
-                <h3 class="section-title">📈 Your Progress</h3>
+                <h3 class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24" style="color:var(--neon-cyan);"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Your Progress</h3>
                 <div class="card">
                     <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
                         <span style="font-size:0.82rem;font-weight:600;">${completed} of ${total} tasks</span>
                         <span style="font-size:0.82rem;color:var(--primary);font-weight:700;">${progress}%</span>
                     </div>
                     <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
-                    ${profile.domain ? `<p style="margin-top:12px;font-size:0.82rem;color:var(--text-secondary);">Domain: <strong>${profile.domain}</strong></p>` : '<p style="margin-top:12px;font-size:0.82rem;color:var(--warning);">⚠ No domain selected yet. Go to Domains to pick one!</p>'}
+                    ${profile.domain ? `<p style="margin-top:12px;font-size:0.82rem;color:var(--text-secondary);">Domain: <strong>${profile.domain}</strong></p>` : '<p style="margin-top:12px;font-size:0.82rem;color:var(--warning);display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> No domain selected yet. Go to Domains to pick one!</p>'}
                 </div>
             </div>` : ''}
 
             <div class="grid-2">
                 <div class="section">
-                    <h3 class="section-title">📋 Recent Tasks</h3>
+                    <h3 class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="margin-right:8px;color:var(--neon-purple);"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Recent Tasks</h3>
                     ${tasks.length === 0 ? '<div class="card"><p style="color:var(--text-muted);font-size:0.85rem;">No tasks yet</p></div>' :
                     tasks.slice(0, 3).map(t => `
                         <div class="task-card ${t.status}">
@@ -260,7 +320,7 @@
                     `).join('')}
                 </div>
                 <div class="section">
-                    <h3 class="section-title">📢 Announcements</h3>
+                    <h3 class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="margin-right:8px;color:var(--neon-yellow);"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Announcements</h3>
                     ${announcements.length === 0 ? '<div class="card"><p style="color:var(--text-muted);font-size:0.85rem;">No announcements</p></div>' :
                     announcements.slice(0, 3).map(a => `
                         <div class="announcement-card">
@@ -303,7 +363,7 @@
 
             <div class="grid-2">
                 <div class="section">
-                    <h3 class="section-title">📊 Task Completion</h3>
+                    <h3 class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="margin-right:8px;color:var(--neon-cyan);"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Task Completion</h3>
                     <div class="card">
                         <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
                             <span style="font-size:0.82rem;font-weight:600;">${analytics.completedTasks} of ${analytics.totalTasks} completed</span>
@@ -318,7 +378,7 @@
                     </div>
                 </div>
                 <div class="section">
-                    <h3 class="section-title">📢 Recent Announcements</h3>
+                    <h3 class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="margin-right:8px;color:var(--neon-yellow);"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Recent Announcements</h3>
                     ${announcements.length === 0 ? '<div class="card"><p style="color:var(--text-muted);font-size:0.85rem;">No announcements yet</p></div>' :
                     announcements.slice(0, 3).map(a => `
                         <div class="announcement-card">
@@ -370,10 +430,10 @@
                                         ${t.domain ? `<span class="task-tag tag-domain">${t.domain}</span>` : ''}
                                         <span class="task-tag tag-${t.status}">${t.status}</span>
                                         ${t.points ? `<span class="task-tag tag-points">${t.points} pts</span>` : ''}
-                                        ${t.assigned_to_name ? `<span class="task-tag" style="background:var(--bg);color:var(--text-2,#555);">→ ${t.assigned_to_name}</span>` : ''}
+                                        ${t.assigned_to_name ? `<span class="task-tag" style="background:var(--bg);color:var(--text-2,#555);display:inline-flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><polyline points="9 18 15 12 9 6"/></svg> ${t.assigned_to_name}</span>` : ''}
                                         <span class="task-deadline">${formatDate(t.deadline)}</span>
                                     </div>
-                                    ${t.feedback ? `<div class="task-feedback">💬 ${t.feedback}</div>` : ''}
+                                    ${t.feedback ? `<div class="task-feedback" style="display:flex;align-items:flex-start;gap:8px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-top:2px;flex-shrink:0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> <span>${t.feedback}</span></div>` : ''}
                                     
                                     ${user.role === 'student' && t.status === 'pending' ? `
                                         <div style="margin-top:14px;">
@@ -734,7 +794,7 @@
                             </div>
                             <div class="domain-name">${d.name}</div>
                             <div class="domain-roadmap">${d.roadmap || 'Roadmap coming soon'}</div>
-                            ${profile.domain === d.name ? '<div style="margin-top:10px;font-size:0.75rem;color:var(--primary);font-weight:600;">✓ Your Domain</div>' : ''}
+                             ${profile.domain === d.name ? '<div style="margin-top:10px;font-size:0.75rem;color:var(--primary);font-weight:600;display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg> Your Domain</div>' : ''}
                             <button class="domain-roadmap-btn" data-id="${d.id}" data-name="${d.name}" onclick="event.stopPropagation();">
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
                                 View Roadmap
@@ -798,7 +858,7 @@
             <div class="roadmap-container">
                 <div class="roadmap-header">
                     <div class="roadmap-header-left">
-                        <div class="roadmap-header-icon">🗺️</div>
+                        <div class="roadmap-header-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg></div>
                         <div>
                             <div class="roadmap-title">Learning Roadmaps</div>
                             <div class="roadmap-subtitle">Select a domain to view its roadmap</div>
@@ -881,8 +941,8 @@
                                         
                                         ${canEdit ? `
                                             <div class="roadmap-phase-controls">
-                                                <button class="roadmap-btn roadmap-btn-outline roadmap-btn-sm edit-cp-btn" data-id="${cp.id}" data-phase="${cp.phase}" data-title="${cp.title}" data-desc="${(cp.description || '').replace(/"/g, '&quot;')}" data-order="${cp.sort_order}">✏️ Edit</button>
-                                                <button class="roadmap-btn roadmap-btn-danger roadmap-btn-sm delete-cp-btn" data-id="${cp.id}">🗑️ Delete</button>
+                                                <button class="roadmap-btn roadmap-btn-outline roadmap-btn-sm edit-cp-btn" data-id="${cp.id}" data-phase="${cp.phase}" data-title="${cp.title}" data-desc="${(cp.description || '').replace(/"/g, '&quot;')}" data-order="${cp.sort_order}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+                                                <button class="roadmap-btn roadmap-btn-danger roadmap-btn-sm delete-cp-btn" data-id="${cp.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Delete</button>
                                             </div>
                                         ` : ''}
                                     </div>
@@ -1007,7 +1067,7 @@
             <div class="roadmap-container" id="roadmapEditorContainer">
                 <div class="roadmap-header">
                     <div class="roadmap-header-left">
-                        <div class="roadmap-header-icon">🗺️</div>
+                        <div class="roadmap-header-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg></div>
                         <div>
                             <div class="roadmap-title">Manage Roadmaps</div>
                             <div class="roadmap-subtitle">Select a domain to view and edit its roadmap</div>
@@ -1050,13 +1110,28 @@
 
         editorContent.innerHTML = `
             <!-- Add new checkpoint form -->
-            <div class="roadmap-edit-panel" style="margin:24px 32px 0;position:relative;z-index:3;">
-                <div class="roadmap-edit-title">➕ Add New Checkpoint</div>
+            <div class="roadmap-edit-panel">
+                <div class="roadmap-edit-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="color:var(--neon-cyan)"><path d="M12 5v14M5 12h14"/></svg>
+                    Add New Checkpoint
+                </div>
                 <form class="roadmap-edit-form" id="addCheckpointForm">
-                    <input type="text" name="phase" placeholder="Phase label (e.g., Phase 1)">
-                    <input type="text" name="title" placeholder="Checkpoint title *" required>
-                    <input type="number" name="sort_order" placeholder="Order" style="width:80px;">
-                    <textarea name="description" placeholder="Description items (one per line)"></textarea>
+                    <div class="form-group">
+                        <label class="form-label">Phase label</label>
+                        <input type="text" name="phase" class="form-input" placeholder="e.g., Phase 1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Checkpoint title *</label>
+                        <input type="text" name="title" class="form-input" placeholder="Enter title" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Order</label>
+                        <input type="number" name="sort_order" class="form-input" placeholder="Order">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Description items (one per line)</label>
+                        <textarea name="description" class="form-textarea" placeholder="Enter details..."></textarea>
+                    </div>
                 </form>
                 <div class="roadmap-edit-actions">
                     <button class="roadmap-btn roadmap-btn-primary" id="addCheckpointBtn">Add Checkpoint</button>
@@ -1097,8 +1172,8 @@
                                     ` : '<div style="color:var(--text-muted);font-size:0.8rem">No details</div>'}
                                     
                                     <div class="roadmap-phase-controls">
-                                        <button class="roadmap-btn roadmap-btn-outline roadmap-btn-sm edit-cp-btn" data-id="${cp.id}" data-phase="${cp.phase}" data-title="${cp.title}" data-desc="${(cp.description || '').replace(/"/g, '&quot;')}" data-order="${cp.sort_order}">✏️ Edit</button>
-                                        <button class="roadmap-btn roadmap-btn-danger roadmap-btn-sm delete-cp-btn" data-id="${cp.id}">🗑️ Delete</button>
+                                        <button class="roadmap-btn roadmap-btn-outline roadmap-btn-sm edit-cp-btn" data-id="${cp.id}" data-phase="${cp.phase}" data-title="${cp.title}" data-desc="${(cp.description || '').replace(/"/g, '&quot;')}" data-order="${cp.sort_order}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+                                        <button class="roadmap-btn roadmap-btn-danger roadmap-btn-sm delete-cp-btn" data-id="${cp.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Delete</button>
                                     </div>
                                 </div>
                             </div>
@@ -1175,13 +1250,25 @@
                 const cpCard = btn.closest('.roadmap-cp-card');
                 cpCard.innerHTML = `
                     <form class="roadmap-edit-form" id="editCpForm-${btn.dataset.id}">
-                        <input type="text" name="phase" value="${btn.dataset.phase}" placeholder="Phase label">
-                        <input type="text" name="title" value="${btn.dataset.title}" placeholder="Title" required>
-                        <input type="number" name="sort_order" value="${btn.dataset.order}" placeholder="Order" style="width:80px;">
-                        <textarea name="description" placeholder="Description (one item per line)">${btn.dataset.desc.replace(/&quot;/g, '"')}</textarea>
+                        <div class="form-group">
+                            <label class="form-label">Phase</label>
+                            <input type="text" name="phase" class="form-input" value="${btn.dataset.phase}" placeholder="Phase">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Title</label>
+                            <input type="text" name="title" class="form-input" value="${btn.dataset.title}" placeholder="Title" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Order</label>
+                            <input type="number" name="sort_order" class="form-input" value="${btn.dataset.order}" placeholder="Order">
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-textarea" placeholder="Description">${btn.dataset.desc.replace(/&quot;/g, '"')}</textarea>
+                        </div>
                     </form>
                     <div class="roadmap-edit-actions">
-                        <button class="roadmap-btn roadmap-btn-primary roadmap-btn-sm save-edit-btn" data-id="${btn.dataset.id}">Save</button>
+                        <button class="roadmap-btn roadmap-btn-primary roadmap-btn-sm save-edit-btn" data-id="${btn.dataset.id}">Save Changes</button>
                         <button class="roadmap-btn roadmap-btn-outline roadmap-btn-sm cancel-edit-btn">Cancel</button>
                     </div>
                 `;
@@ -1230,7 +1317,7 @@
         contentArea.innerHTML = `
             <!-- Podium for top 3 -->
             <div class="card" style="overflow:visible;margin-bottom:24px;">
-                <div class="card-header"><span class="card-title">🏆 Top Performers</span></div>
+                <div class="card-header"><span class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="margin-right:8px;color:var(--neon-yellow);"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg> Top Performers</span></div>
                 <div class="podium-container">
                     ${top3.length >= 2 ? `
                     <div class="podium-item podium-2">
@@ -1242,7 +1329,7 @@
                     </div>` : ''}
                     ${top3.length >= 1 ? `
                     <div class="podium-item podium-1">
-                        <div class="podium-crown">👑</div>
+                        <div class="podium-crown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24" style="color:var(--neon-yellow);filter:drop-shadow(0 0 8px rgba(250,204,21,0.5))"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg></div>
                         <div class="podium-avatar" style="background:linear-gradient(135deg,#ffd700,#ff8c00);">${top3[0].name.charAt(0)}</div>
                         <div class="podium-name">${top3[0].name}</div>
                         <div class="podium-domain">${top3[0].domain || '—'}</div>
@@ -1263,7 +1350,7 @@
             <div class="grid-2">
                 <!-- Chart -->
                 <div class="card">
-                    <div class="card-header"><span class="card-title">📊 Points Distribution</span></div>
+                    <div class="card-header"><span class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="margin-right:8px;color:var(--neon-cyan);"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Points Distribution</span></div>
                     <div style="position:relative;height:300px;">
                         <canvas id="leaderChart"></canvas>
                     </div>
@@ -1271,7 +1358,7 @@
 
                 <!-- Your Rank card -->
                 <div class="card">
-                    <div class="card-header"><span class="card-title">🎯 Your Position</span></div>
+                    <div class="card-header"><span class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="margin-right:8px;color:var(--neon-purple);"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Your Position</span></div>
                     ${userRank >= 0 ? `
                     <div style="text-align:center;padding:20px 0;">
                         <div style="font-size:3rem;font-weight:800;color:var(--primary);line-height:1;">#${userRank + 1}</div>
@@ -1286,7 +1373,7 @@
                         </div>
                         ${userRank > 0 ? `<div style="margin-top:16px;padding:10px 16px;background:var(--primary-bg);border-radius:var(--radius-sm);font-size:0.78rem;color:var(--primary);font-weight:600;">
                             ${data[userRank - 1].points - data[userRank].points} more pts to reach #${userRank}
-                        </div>` : '<div style="margin-top:16px;padding:10px 16px;background:var(--success-bg);border-radius:var(--radius-sm);font-size:0.82rem;color:var(--success);font-weight:600;">🥇 You\'re the leader!</div>'}
+                        </div>` : '<div style="margin-top:16px;padding:10px 16px;background:var(--success-bg);border-radius:var(--radius-sm);font-size:0.82rem;color:var(--success);font-weight:600;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="margin-right:8px;vertical-align:middle;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg> You\'re the leader!</div>'}
                     </div>
                     ` : '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.85rem;">Complete tasks to appear on the leaderboard!</div>'}
                 </div>
@@ -1396,7 +1483,7 @@
             <!-- Stat cards row -->
             <div class="stats-grid" style="grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));">
                 <div class="stat-card">
-                    <div class="stat-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+                    <div class="stat-icon cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
                     <div class="stat-info"><span class="stat-number">${profile.credits || 0}</span><span class="stat-label">Total Credits</span></div>
                 </div>
                 <div class="stat-card">
@@ -1420,16 +1507,16 @@
                     <div style="position:relative;max-width:260px;margin:0 auto;">
                         <canvas id="progressDonut"></canvas>
                         <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
-                            <div style="font-size:2rem;font-weight:800;color:var(--primary);line-height:1;">${progress}%</div>
+                            <div style="font-size:2rem;font-weight:800;color:var(--neon-cyan);line-height:1;">${progress}%</div>
                             <div style="font-size:0.72rem;color:var(--text-muted);">complete</div>
                         </div>
                     </div>
                     <div style="display:flex;justify-content:center;gap:20px;margin-top:18px;">
                         <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem;">
-                            <span style="width:10px;height:10px;border-radius:50%;background:#6c5ce7;"></span> Done (${completed.length})
+                            <span style="width:10px;height:10px;border-radius:50%;background:var(--neon-cyan);box-shadow:0 0 8px rgba(6,182,212,0.5);"></span> Done (${completed.length})
                         </div>
                         <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem;">
-                            <span style="width:10px;height:10px;border-radius:50%;background:#e8e9f0;"></span> Pending (${pending.length})
+                            <span style="width:10px;height:10px;border-radius:50%;background:#333;"></span> Pending (${pending.length})
                         </div>
                     </div>
                 </div>
@@ -1448,7 +1535,7 @@
             <!-- Domain progress breakdown -->
             ${domainNames.length > 0 ? `
             <div class="card" style="margin-top:24px;">
-                <div class="card-header"><span class="card-title">📂 Domain Breakdown</span></div>
+                <div class="card-header"><span class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="margin-right:8px;color:var(--neon-cyan);"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Domain Breakdown</span></div>
                 <div style="display:flex;flex-direction:column;gap:18px;">
                     ${domainNames.map((d, i) => {
                         const info = domainMap[d];
@@ -1462,7 +1549,7 @@
                                 </div>
                                 <div style="display:flex;align-items:center;gap:12px;">
                                     <span style="font-size:0.75rem;color:var(--text-muted);">${info.done}/${info.total} tasks</span>
-                                    <span style="font-size:0.78rem;font-weight:700;color:var(--primary);">${info.pts} pts</span>
+                                    <span style="font-size:0.78rem;font-weight:700;color:var(--neon-yellow);">${info.pts} pts</span>
                                     <span style="font-size:0.75rem;font-weight:600;color:${pct === 100 ? 'var(--success)' : 'var(--text-secondary)'};">${pct}%</span>
                                 </div>
                             </div>
@@ -1478,7 +1565,7 @@
             <!-- Recent activity -->
             ${completed.length > 0 ? `
             <div class="card" style="margin-top:24px;">
-                <div class="card-header"><span class="card-title">✅ Recently Completed</span></div>
+                <div class="card-header"><span class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="margin-right:8px;color:var(--success);"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Recently Completed</span></div>
                 <div style="display:flex;flex-direction:column;gap:8px;">
                     ${completed.slice(0, 5).map(t => `
                         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);">
@@ -1503,7 +1590,7 @@
                     labels: ['Completed', 'Pending'],
                     datasets: [{
                         data: [completed.length, pending.length],
-                        backgroundColor: ['#6c5ce7', '#e8e9f0'],
+                        backgroundColor: ['#22d3ee', '#222'],
                         borderWidth: 0,
                         cutout: '75%',
                     }]
@@ -1565,8 +1652,8 @@
                         }
                     },
                     scales: {
-                        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } },
-                        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'Inter', size: 11 } }, beginAtZero: true }
+                        x: { grid: { display: false }, ticks: { color: '#888', font: { family: 'Inter', size: 11 } } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888', font: { family: 'Inter', size: 11 } }, beginAtZero: true }
                     }
                 }
             });
@@ -1599,7 +1686,7 @@
                     <div class="form-group">
                         <label class="form-label">Assign To</label>
                         <select class="form-select" id="taskStudent">
-                            <option value="">📢 All students in selected domain</option>
+                            <option value="">All students in selected domain</option>
                             ${students.map(s => `<option value="${s.id}" data-domain="${s.domain || ''}">${s.name} (${s.domain || 'No domain'})</option>`).join('')}
                         </select>
                         <p style="font-size:0.72rem;color:var(--text-3,#8e90a6);margin-top:5px;" id="assignHint">
@@ -1792,7 +1879,7 @@
 
         contentArea.innerHTML = `
             <div class="card" style="max-width:600px;margin-bottom:24px;">
-                <div class="card-header"><span class="card-title">📢 Post Announcement</span></div>
+                <div class="card-header"><span class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="margin-right:8px;color:var(--neon-yellow);"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Post Announcement</span></div>
                 <form id="addAnnouncementForm">
                     <div class="form-group">
                         <label class="form-label">Title *</label>
@@ -1840,7 +1927,14 @@
     }
 
     // ===== VIEW: REFERENCES (Learning Resources) =====
-    const refTypeIcons = { article: '📄', video: '🎥', course: '🎓', tool: '🔧', documentation: '📖', other: '💡' };
+    const refTypeIcons = { 
+        article: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', 
+        video: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>', 
+        course: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>', 
+        tool: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1-2.83-2.83l-3.94 3.6z"/><path d="m14.7 6.3 3.6-3.94a2 2 0 0 1 2.83 2.83l-3.77 3.77a1 1 0 0 1-1.4 0L14.7 7.7a1 1 0 0 1 0-1.4z"/><path d="M14.7 6.3 13 4.6l-2.27 2.27A2 2 0 0 0 10 8.29V11l-2.6 2.6"/><path d="M18.4 9.4 20 11l-2.27 2.27A2 2 0 0 1 16.29 14H13l-2.6 2.6"/><path d="m8 14 5 5a2 2 0 1 1-2.83 2.83l-5-5a2 2 0 1 1 2.83-2.83z"/></svg>', 
+        documentation: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>', 
+        other: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' 
+    };
     const refTypeColors = { article: 'var(--primary)', video: 'var(--danger)', course: 'var(--success)', tool: 'var(--info)', documentation: '#e67e22', other: 'var(--text-muted)' };
 
     async function loadReferences() {
@@ -1859,7 +1953,7 @@
             <div class="ref-container">
                 <div class="ref-header">
                     <div class="ref-header-left">
-                        <div class="ref-header-icon">📚</div>
+                        <div class="ref-header-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
                         <div>
                             <div class="ref-title">Learning References</div>
                             <div class="ref-subtitle">Free resources organized by domain and learning phase</div>
@@ -1914,13 +2008,13 @@
         refContent.innerHTML = `
             ${canEdit ? `
             <div class="ref-add-panel">
-                <div class="ref-add-title">➕ Add New Reference</div>
+                <div class="ref-add-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="margin-right:8px;color:var(--neon-cyan);"><path d="M12 5v14M5 12h14"/></svg> Add New Reference</div>
                 <form class="ref-add-form" id="addRefForm">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="ref-form-row">
                         <input type="text" name="title" placeholder="Title *" required class="form-input">
                         <input type="url" name="url" placeholder="URL *" required class="form-input">
                     </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;">
+                    <div class="ref-form-row col-3">
                         <select name="phase" class="form-select">
                             <option value="">Phase (optional)</option>
                             <option value="Phase 1">Phase 1</option><option value="Phase 2">Phase 2</option>
@@ -1928,9 +2022,9 @@
                             <option value="Phase 5">Phase 5</option>
                         </select>
                         <select name="type" class="form-select">
-                            <option value="article">📄 Article</option><option value="video">🎥 Video</option>
-                            <option value="course">🎓 Course</option><option value="tool">🔧 Tool</option>
-                            <option value="documentation">📖 Documentation</option><option value="other">💡 Other</option>
+                            <option value="article">Article</option><option value="video">Video</option>
+                            <option value="course">Course</option><option value="tool">Tool</option>
+                            <option value="documentation">Documentation</option><option value="other">Other</option>
                         </select>
                         <input type="text" name="source" placeholder="Source (e.g. MDN)" class="form-input">
                     </div>
@@ -1951,7 +2045,7 @@
                 ${allTypes.length > 1 ? `
                 <div class="ref-filters">
                     <button class="ref-filter-pill active" data-type="all">All</button>
-                    ${allTypes.map(t => `<button class="ref-filter-pill" data-type="${t}">${refTypeIcons[t] || '💡'} ${t.charAt(0).toUpperCase() + t.slice(1)}</button>`).join('')}
+                    ${allTypes.map(t => `<button class="ref-filter-pill" data-type="${t}">${t.charAt(0).toUpperCase() + t.slice(1)}</button>`).join('')}
                 </div>` : ''}
 
                 <div class="ref-phases" id="refPhases">
@@ -2023,9 +2117,9 @@
                 card.innerHTML = `
                     <form class="ref-edit-inline" id="editRef-${id}">
                         <input type="text" name="title" value="${btn.dataset.title}" class="form-input" placeholder="Title" required>
-                        <input type="url" name="url" value="${btn.dataset.url}" class="form-input" placeholder="URL" required style="margin-top:8px;">
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;">
-                            <select name="type" class="form-select">${['article','video','course','tool','documentation','other'].map(t => `<option value="${t}" ${t===btn.dataset.reftype?'selected':''}>${refTypeIcons[t]} ${t}</option>`).join('')}</select>
+                        <input type="url" name="url" value="${btn.dataset.url}" class="form-input" placeholder="URL" required>
+                        <div class="ref-form-row col-3">
+                            <select name="type" class="form-select">${['article','video','course','tool','documentation','other'].map(t => `<option value="${t}" ${t===btn.dataset.reftype?'selected':''}>${t}</option>`).join('')}</select>
                             <input type="text" name="source" value="${btn.dataset.source || ''}" class="form-input" placeholder="Source">
                             <select name="phase" class="form-select">${['','Phase 1','Phase 2','Phase 3','Phase 4','Phase 5'].map(p => `<option value="${p}" ${p===btn.dataset.phase?'selected':''}>${p||'No phase'}</option>`).join('')}</select>
                         </div>
@@ -2052,7 +2146,7 @@
     }
 
     function renderRefCard(r, canEdit) {
-        const icon = refTypeIcons[r.type] || '💡';
+        const icon = refTypeIcons[r.type] || refTypeIcons.other;
         const color = refTypeColors[r.type] || 'var(--text-muted)';
         const canModify = canEdit && (user.role === 'admin' || r.created_by === user.id);
         return `
@@ -2074,8 +2168,8 @@
                         </div>
                         <div class="ref-card-actions">
                             ${canModify ? `
-                                <button class="ref-edit-btn" data-id="${r.id}" data-title="${(r.title||'').replace(/"/g,'&quot;')}" data-url="${r.url}" data-reftype="${r.type}" data-source="${(r.source||'').replace(/"/g,'&quot;')}" data-phase="${r.phase||''}" data-desc="${(r.description||'').replace(/"/g,'&quot;')}" title="Edit">✏️</button>
-                                <button class="ref-delete-btn" data-id="${r.id}" title="Delete">🗑️</button>
+                                <button class="ref-edit-btn" data-id="${r.id}" data-title="${(r.title||'').replace(/"/g,'&quot;')}" data-url="${r.url}" data-reftype="${r.type}" data-source="${(r.source||'').replace(/"/g,'&quot;')}" data-phase="${r.phase||''}" data-desc="${(r.description||'').replace(/"/g,'&quot;')}" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                                <button class="ref-delete-btn" data-id="${r.id}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                             ` : ''}
                             <a href="${r.url}" target="_blank" rel="noopener noreferrer" class="ref-link-btn">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -2135,6 +2229,46 @@
             updateThemeIcons();
         });
     }
+
+    // ===== SCROLL REVEAL =====
+    function initScrollReveal() {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+        contentArea.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    }
+
+    // ===== COUNTER ANIMATION =====
+    function animateCounters() {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        contentArea.querySelectorAll('.stat-number').forEach(el => {
+            const text = el.textContent.trim();
+            const match = text.match(/^(\d+)(.*)$/);
+            if (!match) return;
+            const target = parseInt(match[1]);
+            const suffix = match[2] || '';
+            let current = 0;
+            const step = Math.max(1, Math.floor(target / 30));
+            const tick = () => {
+                current = Math.min(current + step, target);
+                el.textContent = current + suffix;
+                if (current < target) requestAnimationFrame(tick);
+            };
+            el.textContent = '0' + suffix;
+            requestAnimationFrame(tick);
+        });
+    }
+
+    // Enhance navigateTo with post-load hooks
+    const origNavigateTo = navigateTo;
+    navigateTo = function(viewId) {
+        origNavigateTo(viewId);
+        requestAnimationFrame(() => {
+            initScrollReveal();
+            animateCounters();
+        });
+    };
 
     // ===== INIT =====
     buildNav();
