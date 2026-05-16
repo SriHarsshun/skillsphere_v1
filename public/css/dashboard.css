@@ -35,6 +35,23 @@
     --gradient-sun: linear-gradient(135deg, #fdcb6e, #e17055);
 }
 
+body.dark-theme {
+    --bg: #121212;
+    --white: #1e1e2e;
+    --text: #e0e0e0;
+    --text-secondary: #a0a0b0;
+    --text-muted: #6b7280;
+    --border: #2d2d3d;
+    --border-light: #3a3a4d;
+    --primary-bg: rgba(108, 92, 231, 0.15);
+    --success-bg: rgba(0, 184, 148, 0.15);
+    --warning-bg: rgba(253, 203, 110, 0.15);
+    --danger-bg: rgba(225, 112, 85, 0.15);
+    --info-bg: rgba(9, 132, 227, 0.15);
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -317,6 +334,35 @@ body {
 }
 
 .top-bar-left { display: flex; align-items: center; gap: 16px; }
+
+.top-bar-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.theme-toggle {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: var(--bg);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    margin-right: 12px;
+}
+.theme-toggle:hover {
+    background: var(--primary-bg);
+    color: var(--primary);
+}
+.theme-toggle svg {
+    width: 18px;
+    height: 18px;
+}
 
 .mobile-menu-btn {
     display: none;

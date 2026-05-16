@@ -450,5 +450,31 @@
         skipBtn.onclick = () => completeRegistration(null);
         aiInputArea.appendChild(skipBtn);
     }
+    // ===== Theme Toggle =====
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        const sunIcon = themeToggle.querySelector('.sun-icon');
+        const moonIcon = themeToggle.querySelector('.moon-icon');
+
+        const updateThemeIcons = () => {
+            if (document.body.classList.contains('dark-theme')) {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            } else {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            }
+        };
+
+        // Initial icon state
+        updateThemeIcons();
+
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+            const isDark = document.body.classList.contains('dark-theme');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeIcons();
+        });
+    }
 
 })();
